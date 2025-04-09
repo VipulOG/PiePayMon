@@ -1,0 +1,17 @@
+# The formatter multiplexer - https://github.com/numtide/treefmt
+
+[formatter.nix]
+command = "alejandra"
+includes = [ "*.nix" ]
+
+[formatter.ruff_format]
+command = "ruff"
+options = [ "format" ]
+includes = [ "*.py" ]
+priority = 0
+
+[formatter.ruff_sort_imports]
+command = "ruff"
+options = [ "check", "--select", "I", "--fix" ]
+includes = [ "*.py" ]
+priority = 1
