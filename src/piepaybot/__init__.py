@@ -3,21 +3,14 @@ import logging
 import sys
 
 from piepaybot.bot import PiePayBot
-from piepaybot.config import settings
-
-LOG_LEVEL = settings.LOG_LEVEL
-
-logging.basicConfig(
-    level=LOG_LEVEL,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()],
-)
+from piepaybot.logger import setup_logger
 
 logger = logging.getLogger(__name__)
 
 
 def main():
     try:
+        setup_logger()
         bot = PiePayBot()
         asyncio.run(bot.run())
     except KeyboardInterrupt:
