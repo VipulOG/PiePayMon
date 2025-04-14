@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from types import TracebackType
-from typing import TypedDict, final
+from typing import TypedDict, cast, final
 
 from piepaybot.client import PiePayAPIClient
 from piepaybot.crypto import generate_session_key
@@ -69,7 +69,7 @@ class SessionManager:
                     logger.warning("Empty session file found.")
                     return None
 
-                data: SessionData = json.loads(content)
+                data = cast(SessionData, json.loads(content))
 
                 if not data.get("accessToken") or not data.get("sessionKey"):
                     logger.warning("Invalid session data format in file.")
@@ -114,7 +114,7 @@ class SessionManager:
                 logger.error(f"Login failed. Status code: {response.status_code}")
                 return None
 
-            response_json: LoginResponseJson = response.json()
+            response_json = cast(LoginResponseJson, response.json())
 
             if not (login_data := response_json.get("data")):
                 logger.error("Invalid response: missing 'data' field.")

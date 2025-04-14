@@ -1,5 +1,5 @@
 import logging
-from typing import TypedDict
+from typing import TypedDict, cast
 
 from piepaybot.client import PiePayAPIClient
 from piepaybot.models import Offer
@@ -40,7 +40,7 @@ async def fetch_offers(
             logger.error(f"Failed to fetch offers. Status code: {response.status_code}")
             return None
 
-        response_data: OffersResponseJson = response.json()
+        response_data = cast(OffersResponseJson, response.json())
 
         if not (offers_data := response_data.get("data")):
             logger.error("Invalid response: missing 'data' field.")
