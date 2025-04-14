@@ -4,7 +4,6 @@ import logging
 from collections.abc import Mapping
 from types import TracebackType
 from typing import TypedDict, cast, final
-from urllib.parse import urljoin
 
 import httpx
 
