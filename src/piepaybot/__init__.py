@@ -3,8 +3,9 @@ import logging
 import sys
 
 from piepaybot.bot import PiePayBot
+from piepaybot.config import settings
 
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = settings.LOG_LEVEL
 
 logging.basicConfig(
     level=LOG_LEVEL,

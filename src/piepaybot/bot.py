@@ -5,19 +5,20 @@ import signal
 from typing import final
 
 from piepaybot.client import PiePayAPIClient
+from piepaybot.config import settings
 from piepaybot.offers import fetch_offers
 from piepaybot.session import SessionManager
 
 logger = logging.getLogger(__name__)
 
 
-MIN_CASHBACK = 100  # Minimum cashback amount to consider an offer interesting
-MIN_DELAY = 3  # Minimum delay between checks in seconds
-MAX_DELAY = 10  # Maximum delay between checks in seconds
-MAX_PAYMENT = 1000  # Maximum payment amount to avoid large transactions
-PAY_TO_EARN_RATIO = 0.1  # Acceptable ratio between payment and expected cashback
-MAX_CONSECUTIVE_ERRORS = 3  # Maximum consecutive errors before exiting
-ERROR_DELAY_INCREMENT = 1  # Additional delay after each error in seconds
+MIN_CASHBACK = settings.MIN_CASHBACK
+MIN_DELAY = settings.MIN_DELAY
+MAX_DELAY = settings.MAX_DELAY
+MAX_PAYMENT = settings.MAX_PAYMENT
+PAY_EARN_RATIO = settings.PAY_EARN_RATIO
+MAX_CONSECUTIVE_ERRORS = settings.MAX_CONSECUTIVE_ERRORS
+ERROR_DELAY_INCREMENT = settings.ERROR_DELAY_INCREMENT
 
 
 @final
@@ -56,7 +57,7 @@ class PiePayBot:
                             session_key=session.get("sessionKey"),
                             min_earn=MIN_CASHBACK,
                             max_pay=MAX_PAYMENT,
-                            min_pay_earn_ratio=PAY_TO_EARN_RATIO,
+                            min_pay_earn_ratio=PAY_EARN_RATIO,
                         )
 
                         if offers is None:
