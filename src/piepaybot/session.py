@@ -59,95 +59,75 @@ class SessionManager:
         if self._cached_session:
             return self._cached_session
 
-        try:
-            if not os.path.exists(self.session_file):
-                logger.debug("Session file does not exist.")
+        if not os.path.exists(self.session_file):
+            logger.debug("Session file does not exist.")
+            return None
+
+        with open(self.session_file, "r") as f:
+            if not (content := f.read().strip()):
+                logger.warning("Empty session file found.")
                 return None
 
-            with open(self.session_file, "r") as f:
-                if not (content := f.read().strip()):
-                    logger.warning("Empty session file found.")
-                    return None
+            data = cast(SessionData, json.loads(content))
 
-                data = cast(SessionData, json.loads(content))
+            if not data.get("accessToken") or not data.get("sessionKey"):
+                logger.warning("Invalid session data format in file.")
+                return None
 
-                if not data.get("accessToken") or not data.get("sessionKey"):
-                    logger.warning("Invalid session data format in file.")
-                    return None
-
-                logger.debug("Session data loaded successfully.")
-                self._cached_session = data
-                return data
-
-        except Exception as e:
-            logger.error(f"Failed to load session: {e!r}", exc_info=True)
-            return None
+            logger.debug("Session data loaded successfully.")
+            self._cached_session = data
+            return data
 
     async def _send_otp(self, phone_number: int) -> bool:
-        try:
-            response = await self.client.request(
-                "otps/login/send",
-                "POST",
-                json={"phoneNumber": phone_number},
-            )
+        response = await self.client.request(
+            "otps/login/send",
+            "POST",
+            json={"phoneNumber": phone_number},
+        )
 
-            if response.status_code != 200:
-                logger.error(f"Failed to send OTP. Status code: {response.status_code}")
-                return False
-
-            logger.info("OTP sent successfully.")
-            return True
-
-        except Exception as e:
-            logger.error(f"Failed to send OTP: {e!r}", exc_info=True)
+        if response.status_code != 200:
+            logger.error(f"Failed to send OTP. Status code: {response.status_code}")
             return False
+
+        logger.info("OTP sent successfully.")
+        return True
 
     async def _verify_otp(self, phone_number: int, otp: int) -> str | None:
-        try:
-            response = await self.client.request(
-                "users/login-with-mobile",
-                "POST",
-                json={"phoneNumber": phone_number, "otp": otp},
-            )
+        response = await self.client.request(
+            "users/login-with-mobile",
+            "POST",
+            json={"phoneNumber": phone_number, "otp": otp},
+        )
 
-            if response.status_code != 200:
-                logger.error(f"Login failed. Status code: {response.status_code}")
-                return None
-
-            response_json = cast(LoginResponseJson, response.json())
-
-            if not (login_data := response_json.get("data")):
-                logger.error("Invalid response: missing 'data' field.")
-                return None
-
-            if login_data.get("isNewUser", False):
-                logger.warning(
-                    "Account not found. "
-                    + "Please create an account using the PiePay mobile app first."
-                )
-                return None
-
-            if not (access_token := login_data.get("accessToken")):
-                logger.error("Invalid response: missing 'accessToken' field.")
-                return None
-
-            logger.info("Logged in successfully.")
-            return access_token
-
-        except Exception as e:
-            logger.error(f"Failed OTP verification: {e!r}", exc_info=True)
+        if response.status_code != 200:
+            logger.error(f"Login failed. Status code: {response.status_code}")
             return None
 
-    async def _save_session_data(self, data: SessionData) -> bool:
-        try:
-            with open(self.session_file, "w") as f:
-                json.dump(data, f)
-            logger.debug("Session data saved to file.")
-            return True
+        response_json = cast(LoginResponseJson, response.json())
 
-        except Exception as e:
-            logger.error(f"Failed to save session data: {e!r}", exc_info=True)
-            return False
+        if not (login_data := response_json.get("data")):
+            logger.error("Invalid response: missing 'data' field.")
+            return None
+
+        if login_data.get("isNewUser", False):
+            logger.warning(
+                "Account not found. "
+                + "Please create an account using the PiePay mobile app first."
+            )
+            return None
+
+        if not (access_token := login_data.get("accessToken")):
+            logger.error("Invalid response: missing 'accessToken' field.")
+            return None
+
+        logger.info("Logged in successfully.")
+        return access_token
+
+    async def _save_session_data(self, data: SessionData) -> bool:
+        with open(self.session_file, "w") as f:
+            json.dump(data, f)
+        logger.debug("Session data saved to file.")
+        return True
 
     async def close(self) -> None:
         logger.debug("Closing session.")

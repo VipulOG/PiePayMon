@@ -65,13 +65,8 @@ class PiePayAPIClient:
             logger.debug(f"Success: {endpoint} [{status_code}] - {msg}")
             return response
 
-        try:
-            logger.error(f"Failed: {endpoint} [{status_code}] - {msg}")
-            return response
-
-        except Exception as e:
-            logger.error(f"Failed: {endpoint} [{status_code}] - [{e!r}]", exc_info=True)
-            return response
+        logger.error(f"Failed: {endpoint} [{status_code}] - {msg}")
+        return response
 
     async def close(self) -> None:
         logger.debug("Closing connection.")
