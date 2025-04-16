@@ -7,6 +7,8 @@ logger = logging.getLogger(__name__)
 
 
 def generate_session_key() -> str:
+    logger.debug("Generating session key...")
+
     # Generate private key (2048 bits, exponent=65537)
     private_key = rsa.generate_private_key(
         public_exponent=65537,
