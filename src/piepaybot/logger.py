@@ -35,9 +35,7 @@ def setup_logger():
         console_logger.removeHandler(handler)
 
     console_log_formatter = ColoredFormatter(
-        "%(asctime)s - %(name)s - "
-        + "%(log_color)s%(levelname)s%(reset)s - "
-        + "%(message)s",
+        "%(asctime)s - %(name)s - %(log_color)s%(levelname)s%(reset)s - %(message)s",
         datefmt="%H:%M:%S",
         log_colors={
             "DEBUG": "cyan",
