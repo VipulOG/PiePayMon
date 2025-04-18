@@ -60,9 +60,6 @@ class PiePayBot:
                             min_pay_earn_ratio=PAY_EARN_RATIO,
                         )
 
-                        if offers is None:
-                            offers = []
-
                         logger.info(f"Found {len(offers)} available offers.")
 
                         self.consecutive_errors = 0

@@ -68,16 +68,19 @@ class PiePayAPIClient:
         )
 
         msg = cast(ResponseJson, response.json())["msg"]
-
-        if 200 <= (status_code := response.status_code) < 300:
-            logger.debug(f"Success: {endpoint} [{status_code}] - {msg}")
-            return response
+        status_code = response.status_code
 
         if status_code == 401:
             logger.error(f"Failed: {endpoint} [{status_code}] - {msg}")
             raise SessionExpiredError("Session has expired or is invalid.")
 
-        logger.error(f"Failed: {endpoint} [{status_code}] - {msg}")
+        try:
+            _ = response.raise_for_status()
+        except httpx.HTTPStatusError:
+            logger.error(f"Failed: {endpoint} [{status_code}] - {msg}")
+            raise
+
+        logger.debug(f"Success: {endpoint} [{status_code}] - {msg}")
         return response
 
     async def close(self) -> None:

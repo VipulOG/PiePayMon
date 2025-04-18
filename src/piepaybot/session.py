@@ -79,16 +79,11 @@ class SessionManager:
             return data
 
     async def _send_otp(self, phone_number: int) -> bool:
-        response = await self.client.request(
+        _ = await self.client.request(
             "otps/login/send",
             "POST",
             json={"phoneNumber": phone_number},
         )
-
-        if response.status_code != 200:
-            logger.error(f"Failed to send OTP. Status code: {response.status_code}")
-            return False
-
         logger.info("OTP sent successfully.")
         return True
 
@@ -98,10 +93,6 @@ class SessionManager:
             "POST",
             json={"phoneNumber": phone_number, "otp": otp},
         )
-
-        if response.status_code != 200:
-            logger.error(f"Login failed. Status code: {response.status_code}")
-            return None
 
         response_json = cast(LoginResponseJson, response.json())
 

@@ -28,26 +28,20 @@ async def fetch_offers(
     min_earn: float = 0,
     max_pay: float = 100000000,
     min_pay_earn_ratio: float = 0,
-) -> list[Offer] | None:
+) -> list[Offer]:
     response = await client.request(
         "orders-available/cardholder",
         "POST",
         json={"id": session_key},
     )
 
-    if response.status_code != 200:
-        logger.error(f"Failed to fetch offers. Status code: {response.status_code}")
-        return None
-
     response_data = cast(OffersResponseJson, response.json())
     deals = response_data["data"]["deals"]
 
-    offers = [
+    return [
         Offer(pay=deal["amountToPay"], earn=deal["cardholderEarnings"])
         for deal in deals
         if (deal["cardholderEarnings"] >= min_earn)
         and (deal["amountToPay"] <= max_pay)
         and ((deal["amountToPay"] / deal["cardholderEarnings"]) >= min_pay_earn_ratio)
     ]
-
-    return offers if offers else None
