@@ -8,11 +8,11 @@ logger = logging.getLogger(__name__)
 
 
 class OffersResponseJson(TypedDict):
-    data: "OffersData | None"
+    data: "OffersData"
 
 
 class OffersData(TypedDict):
-    deals: "list[Deal] | None"
+    deals: "list[Deal]"
 
 
 class Deal(TypedDict):
@@ -40,14 +40,7 @@ async def fetch_offers(
         return None
 
     response_data = cast(OffersResponseJson, response.json())
-
-    if not (offers_data := response_data.get("data")):
-        logger.error("Invalid response: missing 'data' field.")
-        return None
-
-    if (deals := offers_data.get("deals")) is None:
-        logger.error("Invalid response: missing 'deals' field.")
-        return None
+    deals = response_data["data"]["deals"]
 
     offers = [
         Offer(pay=deal["amountToPay"], earn=deal["cardholderEarnings"])
