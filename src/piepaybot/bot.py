@@ -4,7 +4,7 @@ import random
 import signal
 from typing import final
 
-from piepaybot.client import PiePayAPIClient
+from piepaybot.client import PiePayAPIClient, SessionExpiredError
 from piepaybot.config import settings
 from piepaybot.offers import fetch_offers
 from piepaybot.session import SessionManager
@@ -71,6 +71,17 @@ class PiePayBot:
                         logger.info(f"Waiting {delay:.2f} seconds before next check...")
 
                         await asyncio.sleep(delay)
+
+                    except SessionExpiredError:
+                        logger.error("Session expired.")
+                        session = await session_manager.create_session()
+
+                        if not session:
+                            logger.error("Failed to create a session. Exiting...")
+                            return
+
+                        client.set_auth_token(session.get("accessToken"))
+                        continue
 
                     except Exception as e:
                         self.consecutive_errors += 1

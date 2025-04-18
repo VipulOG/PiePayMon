@@ -23,6 +23,12 @@ class ResponseJson(TypedDict):
     msg: str | None
 
 
+class SessionExpiredError(Exception):
+    """Raised when the session has expired or is unauthorized (401)."""
+
+    pass
+
+
 @final
 class PiePayAPIClient:
     def __init__(self) -> None:
@@ -63,6 +69,10 @@ class PiePayAPIClient:
         if 200 <= (status_code := response.status_code) < 300:
             logger.debug(f"Success: {endpoint} [{status_code}] - {msg}")
             return response
+
+        if status_code == 401:
+            logger.error(f"Failed: {endpoint} [{status_code}] - {msg}")
+            raise SessionExpiredError("Session has expired or is invalid.")
 
         logger.error(f"Failed: {endpoint} [{status_code}] - {msg}")
         return response
