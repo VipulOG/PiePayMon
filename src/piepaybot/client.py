@@ -37,7 +37,9 @@ class PiePayAPIClient:
         self.client = httpx.AsyncClient()
 
     def set_auth_token(self, token: str) -> None:
+        logger.debug("Applying auth headers to client...")
         self.default_headers["Authorization"] = f"Bearer {token}"
+        logger.debug("Auth headers applied.")
 
     async def request(
         self,
@@ -50,6 +52,7 @@ class PiePayAPIClient:
         headers: Mapping[str, str] | None = None,
     ) -> httpx.Response:
         url = f"{self.base_url}/{endpoint}"
+        logger.debug(f"Request: {endpoint}")
 
         request_headers = self.default_headers.copy()
         if headers:
@@ -78,8 +81,9 @@ class PiePayAPIClient:
         return response
 
     async def close(self) -> None:
-        logger.debug("Closing connection.")
+        logger.debug("Closing client connection...")
         await self.client.aclose()
+        logger.debug("Client connection closed.")
 
     async def __aenter__(self) -> PiePayAPIClient:
         return self
