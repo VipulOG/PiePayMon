@@ -25,9 +25,9 @@ async def fetch_offers(
     client: PiePayAPIClient,
     session_key: str,
     *,
-    min_earn: float | None = None,
-    max_pay: float | None = None,
-    min_pay_earn_ratio: float | None = None,
+    min_earn: float = 0,
+    max_pay: float = 100000000,
+    min_pay_earn_ratio: float = 0,
 ) -> list[Offer] | None:
     response = await client.request(
         "orders-available/cardholder",
@@ -45,12 +45,9 @@ async def fetch_offers(
     offers = [
         Offer(pay=deal["amountToPay"], earn=deal["cardholderEarnings"])
         for deal in deals
-        if (min_earn is None or deal["cardholderEarnings"] >= min_earn)
-        and (max_pay is None or deal["amountToPay"] <= max_pay)
-        and (
-            min_pay_earn_ratio is None
-            or (deal["amountToPay"] / deal["cardholderEarnings"]) >= min_pay_earn_ratio
-        )
+        if (deal["cardholderEarnings"] >= min_earn)
+        and (deal["amountToPay"] <= max_pay)
+        and ((deal["amountToPay"] / deal["cardholderEarnings"]) >= min_pay_earn_ratio)
     ]
 
     return offers if offers else None
