@@ -20,7 +20,7 @@ HEADERS = {
 
 
 class ResponseJson(TypedDict):
-    msg: str | None
+    msg: str
 
 
 class SessionExpiredError(Exception):
@@ -64,7 +64,7 @@ class PiePayAPIClient:
             headers=request_headers,
         )
 
-        msg = cast(ResponseJson, response.json()).get("msg")
+        msg = cast(ResponseJson, response.json())["msg"]
 
         if 200 <= (status_code := response.status_code) < 300:
             logger.debug(f"Success: {endpoint} [{status_code}] - {msg}")
