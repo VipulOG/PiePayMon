@@ -8,6 +8,7 @@ dependencies = [
     "cryptography>=44.0.2",
     "httpx>=0.28.1",
     "pydantic-settings>=2.8.1",
+    "questionary>=2.1.0",
 ]
 
 [project.scripts]

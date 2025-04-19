@@ -2,7 +2,11 @@ import json
 import logging
 import os
 from types import TracebackType
-from typing import TypedDict, cast, final
+from typing import TypedDict, cast, final, override
+
+import questionary
+from prompt_toolkit.document import Document
+from prompt_toolkit.validation import ValidationError, Validator
 
 from piepaybot.client import PiePayAPIClient
 from piepaybot.crypto import generate_session_key
@@ -26,6 +30,20 @@ class LoginData(TypedDict):
     isNewUser: bool
 
 
+class PhoneValidator(Validator):
+    @override
+    def validate(self, document: Document):
+        if not document.text.isdigit():
+            raise ValidationError(message="Please enter a valid phone number.")
+
+
+class OTPValidator(Validator):
+    @override
+    def validate(self, document: Document):
+        if not document.text.isdigit():
+            raise ValidationError(message="Please enter a valid otp.")
+
+
 @final
 class SessionManager:
     def __init__(self, client: PiePayAPIClient | None = None):
@@ -34,13 +52,12 @@ class SessionManager:
         self._cached_session: SessionData | None = None
 
     async def create_session(self) -> SessionData | None:
-        phone_number = int(input("Enter your phone number: ").strip())
-        if not await self._send_otp(phone_number):
+        phone = await self._input_phone()
+        if not await self._send_otp(phone):
             return None
 
-        otp = int(input("Enter the OTP: ").strip())
-        token = await self._verify_otp(phone_number, otp)
-        if not token:
+        otp = await self._input_otp()
+        if not (token := await self._verify_otp(phone, otp)):
             return None
 
         session_data: SessionData = {
@@ -106,6 +123,28 @@ class SessionManager:
 
         logger.info("Logged in successfully.")
         return login_data["accessToken"]
+
+    async def _input_phone(self) -> int:
+        return int(
+            cast(
+                str,
+                await questionary.text(
+                    "Enter your phone number:",
+                    validate=PhoneValidator,
+                ).ask_async(),
+            )
+        )
+
+    async def _input_otp(self) -> int:
+        return int(
+            cast(
+                str,
+                await questionary.text(
+                    "Enter OTP:",
+                    validate=OTPValidator,
+                ).ask_async(),
+            )
+        )
 
     async def _save_session_data(self, data: SessionData) -> bool:
         with open(self.session_file, "w") as f:
