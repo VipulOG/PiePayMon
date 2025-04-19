@@ -18,12 +18,12 @@ class SessionData(TypedDict):
 
 
 class LoginResponseJson(TypedDict):
-    data: "LoginData | None"
+    data: "LoginData"
 
 
 class LoginData(TypedDict):
-    accessToken: str | None
-    isNewUser: bool | None
+    accessToken: str
+    isNewUser: bool
 
 
 @final
@@ -95,24 +95,17 @@ class SessionManager:
         )
 
         response_json = cast(LoginResponseJson, response.json())
+        login_data = response_json["data"]
 
-        if not (login_data := response_json.get("data")):
-            logger.error("Invalid response: missing 'data' field.")
-            return None
-
-        if login_data.get("isNewUser", False):
+        if login_data["isNewUser"]:
             logger.warning(
                 "Account not found. "
                 + "Please create an account using the PiePay mobile app first."
             )
             return None
 
-        if not (access_token := login_data.get("accessToken")):
-            logger.error("Invalid response: missing 'accessToken' field.")
-            return None
-
         logger.info("Logged in successfully.")
-        return access_token
+        return login_data["accessToken"]
 
     async def _save_session_data(self, data: SessionData) -> bool:
         with open(self.session_file, "w") as f:
