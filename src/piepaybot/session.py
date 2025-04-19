@@ -52,6 +52,8 @@ class SessionManager:
         self._cached_session: SessionData | None = None
 
     async def create_session(self) -> SessionData | None:
+        logger.debug("Creating session...")
+
         phone = await self._input_phone()
         if not await self._send_otp(phone):
             return None
@@ -71,6 +73,8 @@ class SessionManager:
         return session_data
 
     async def load_session(self) -> SessionData | None:
+        logger.debug("Loading session...")
+
         if self._cached_session:
             return self._cached_session
 
@@ -94,6 +98,7 @@ class SessionManager:
             return data
 
     async def _send_otp(self, phone_number: int) -> bool:
+        logger.debug("Sending otp...")
         _ = await self.client.request(
             "otps/login/send",
             "POST",
@@ -103,6 +108,8 @@ class SessionManager:
         return True
 
     async def _verify_otp(self, phone_number: int, otp: int) -> str | None:
+        logger.debug("Verifying otp...")
+
         response = await self.client.request(
             "users/login-with-mobile",
             "POST",
@@ -145,14 +152,16 @@ class SessionManager:
         )
 
     async def _save_session_data(self, data: SessionData):
+        logger.debug("Saving session...")
         with open(self.session_file, "w") as f:
             json.dump(data, f)
         logger.debug("Session data saved to file.")
 
     async def close(self) -> None:
-        logger.debug("Closing session.")
+        logger.debug("Closing session...")
         await self.client.close()
         self._cached_session = None
+        logger.debug("Session closed.")
 
     async def __aenter__(self) -> "SessionManager":
         _ = await self.load_session()
