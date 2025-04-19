@@ -87,15 +87,10 @@ class SessionManager:
                 logger.warning("Empty session file found.")
                 return None
 
-            data = cast(SessionData, json.loads(content))
-
-            if not data.get("accessToken") or not data.get("sessionKey"):
-                logger.warning("Invalid session data format in file.")
-                return None
-
-            logger.debug("Session data loaded successfully.")
-            self._cached_session = data
-            return data
+        data = cast(SessionData, json.loads(content))
+        self._cached_session = data
+        logger.debug("Session data loaded successfully.")
+        return data
 
     async def _send_otp(self, phone_number: int) -> bool:
         logger.debug("Sending otp...")
