@@ -65,11 +65,9 @@ class SessionManager:
             "sessionKey": generate_session_key(),
         }
 
-        if not await self._save_session_data(session_data):
-            return None
-
         self._cached_session = session_data
-        logger.debug(f"Session created.")
+        await self._save_session_data(session_data)
+        logger.debug("Session created successfully.")
         return session_data
 
     async def load_session(self) -> SessionData | None:
@@ -146,11 +144,10 @@ class SessionManager:
             )
         )
 
-    async def _save_session_data(self, data: SessionData) -> bool:
+    async def _save_session_data(self, data: SessionData):
         with open(self.session_file, "w") as f:
             json.dump(data, f)
         logger.debug("Session data saved to file.")
-        return True
 
     async def close(self) -> None:
         logger.debug("Closing session.")
