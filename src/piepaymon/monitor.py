@@ -32,6 +32,8 @@ class PiePayMonitor:
         self.shutdown_event.set()
 
     async def run(self):
+        logger.info("PiePayMon is now running...")
+
         loop = asyncio.get_running_loop()
 
         for sig in (signal.SIGINT, signal.SIGTERM):
