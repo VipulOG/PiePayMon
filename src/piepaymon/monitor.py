@@ -38,73 +38,71 @@ class PiePayMonitor:
             loop.add_signal_handler(sig, self.handle_shutdown_signal)
 
         async with PiePayAPIClient() as client:
-            async with SessionManager(client) as session_manager:
-                if not (session := await session_manager.load_session()):
+            session_manager = SessionManager(client)
+            if not (session := await session_manager.load_session()):
+                session = await session_manager.create_session()
+
+            if not session:
+                logger.error("Failed to create a session. Exiting...")
+                return
+
+            client.set_auth_token(session.get("accessToken"))
+
+            while not self.shutdown_event.is_set():
+                try:
+                    logger.info("Fetching offers...")
+
+                    offers = await fetch_offers(
+                        client=client,
+                        session_key=session.get("sessionKey"),
+                        min_earn=MIN_CASHBACK,
+                        max_pay=MAX_PAYMENT,
+                        min_pay_earn_ratio=PAY_EARN_RATIO,
+                    )
+
+                    logger.info(f"Found {len(offers)} available offers.")
+
+                    self.consecutive_errors = 0
+                    delay = random.uniform(MIN_DELAY, MAX_DELAY)
+
+                    logger.info(f"Waiting {delay:.2f} seconds before next check...")
+
+                    await asyncio.sleep(delay)
+
+                except SessionExpiredError:
+                    logger.error("Session expired.")
                     session = await session_manager.create_session()
 
-                if not session:
-                    logger.error("Failed to create a session. Exiting...")
-                    return
+                    if not session:
+                        logger.error("Failed to create a session. Exiting...")
+                        return
 
-                client.set_auth_token(session.get("accessToken"))
+                    client.set_auth_token(session.get("accessToken"))
+                    continue
 
-                while not self.shutdown_event.is_set():
-                    try:
-                        logger.info("Fetching offers...")
+                except Exception as e:
+                    self.consecutive_errors += 1
 
-                        offers = await fetch_offers(
-                            client=client,
-                            session_key=session.get("sessionKey"),
-                            min_earn=MIN_CASHBACK,
-                            max_pay=MAX_PAYMENT,
-                            min_pay_earn_ratio=PAY_EARN_RATIO,
-                        )
+                    logger.error(
+                        "Error fetching offers "
+                        + f"({self.consecutive_errors}/{MAX_CONSECUTIVE_ERRORS}): {e!r}",
+                        exc_info=True,
+                    )
 
-                        logger.info(f"Found {len(offers)} available offers.")
-
-                        self.consecutive_errors = 0
-                        delay = random.uniform(MIN_DELAY, MAX_DELAY)
-
-                        logger.info(f"Waiting {delay:.2f} seconds before next check...")
-
-                        await asyncio.sleep(delay)
-
-                    except SessionExpiredError:
-                        logger.error("Session expired.")
-                        session = await session_manager.create_session()
-
-                        if not session:
-                            logger.error("Failed to create a session. Exiting...")
-                            return
-
-                        client.set_auth_token(session.get("accessToken"))
-                        continue
-
-                    except Exception as e:
-                        self.consecutive_errors += 1
-
+                    if self.consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
                         logger.error(
-                            "Error fetching offers "
-                            + f"({self.consecutive_errors}/{MAX_CONSECUTIVE_ERRORS}): {e!r}",
-                            exc_info=True,
+                            "Reached maximum consecutive errors "
+                            + f"({MAX_CONSECUTIVE_ERRORS}). Exiting..."
                         )
+                        self.shutdown_event.set()
+                        return
 
-                        if self.consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
-                            logger.error(
-                                "Reached maximum consecutive errors "
-                                + f"({MAX_CONSECUTIVE_ERRORS}). Exiting..."
-                            )
-                            self.shutdown_event.set()
-                            break
+                    delay = random.uniform(MIN_DELAY, MAX_DELAY) + (
+                        ERROR_DELAY_INCREMENT * self.consecutive_errors
+                    )
 
-                        delay = random.uniform(MIN_DELAY, MAX_DELAY) + (
-                            ERROR_DELAY_INCREMENT * self.consecutive_errors
-                        )
+                    logger.info(f"Waiting {delay:.2f} seconds before next attempt...")
 
-                        logger.info(
-                            f"Waiting {delay:.2f} seconds before next attempt..."
-                        )
-
-                        await asyncio.sleep(delay)
+                    await asyncio.sleep(delay)
 
         logger.info("Application shutdown complete.")

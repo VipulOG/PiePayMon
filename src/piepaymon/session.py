@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from types import TracebackType
 from typing import TypedDict, cast, final, override
 
 import questionary
@@ -46,9 +45,9 @@ class OTPValidator(Validator):
 
 @final
 class SessionManager:
-    def __init__(self, client: PiePayAPIClient | None = None):
+    def __init__(self, client: PiePayAPIClient):
         self.session_file: str = SESSION_FILE
-        self.client = client or PiePayAPIClient()
+        self.client = client
         self._cached_session: SessionData | None = None
 
     async def create_session(self) -> SessionData | None:
@@ -151,21 +150,3 @@ class SessionManager:
         with open(self.session_file, "w") as f:
             json.dump(data, f)
         logger.debug("Session data saved to file.")
-
-    async def close(self) -> None:
-        logger.debug("Closing session...")
-        await self.client.close()
-        self._cached_session = None
-        logger.debug("Session closed.")
-
-    async def __aenter__(self) -> "SessionManager":
-        _ = await self.load_session()
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        await self.close()
