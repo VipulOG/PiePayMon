@@ -2,8 +2,8 @@ import asyncio
 import logging
 import sys
 
-from piepaybot.bot import PiePayBot
-from piepaybot.logger import setup_logger
+from piepaymon.monitor import PiePayMonitor
+from piepaymon.logger import setup_logger
 
 logger = logging.getLogger(__name__)
 
@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 def main():
     try:
         setup_logger()
-        bot = PiePayBot()
-        asyncio.run(bot.run())
+        monitor = PiePayMonitor()
+        asyncio.run(monitor.run())
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received. Exiting...")
         sys.exit(0)

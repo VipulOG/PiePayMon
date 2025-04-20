@@ -5,10 +5,10 @@
     ...
   }: {
     packages = {
-      default = (pythonSet.mkVirtualEnv "piepaybot-env" workspace.deps.default).overrideAttrs (old: {
+      default = (pythonSet.mkVirtualEnv "piepaymon-env" workspace.deps.default).overrideAttrs (old: {
         # Set meta.mainProgram for commands like `nix run`.
         # https://nixos.org/manual/nixpkgs/stable/#var-meta-mainProgram
-        meta = (old.meta or {}) // {mainProgram = "piepaybot";};
+        meta = (old.meta or {}) // {mainProgram = "piepaymon";};
       });
     };
   };

@@ -8,8 +8,8 @@ import questionary
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError, Validator
 
-from piepaybot.client import PiePayAPIClient
-from piepaybot.crypto import generate_session_key
+from piepaymon.client import PiePayAPIClient
+from piepaymon.crypto import generate_session_key
 
 logger = logging.getLogger(__name__)
 

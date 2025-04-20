@@ -3,10 +3,10 @@ from pathlib import Path
 
 from colorlog import ColoredFormatter
 
-from piepaybot.config import settings
+from piepaymon.config import settings
 
 CONSOLE_LOG_LEVEL = settings.LOG_LEVEL
-LOG_FILE_PATH = Path("logs/piepaybot.log")
+LOG_FILE_PATH = Path("logs/piepaymon.log")
 
 LOG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
@@ -27,7 +27,7 @@ def setup_logger():
     file_log_handler.setFormatter(file_log_formatter)
     file_logger.addHandler(file_log_handler)
 
-    console_logger = logging.getLogger("piepaybot")
+    console_logger = logging.getLogger("piepaymon")
     console_logger.setLevel(logging.DEBUG)
     console_logger.propagate = True
 

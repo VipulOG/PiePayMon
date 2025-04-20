@@ -4,10 +4,10 @@ import random
 import signal
 from typing import final
 
-from piepaybot.client import PiePayAPIClient, SessionExpiredError
-from piepaybot.config import settings
-from piepaybot.offers import fetch_offers
-from piepaybot.session import SessionManager
+from piepaymon.client import PiePayAPIClient, SessionExpiredError
+from piepaymon.config import settings
+from piepaymon.offers import fetch_offers
+from piepaymon.session import SessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ ERROR_DELAY_INCREMENT = settings.ERROR_DELAY_INCREMENT
 
 
 @final
-class PiePayBot:
+class PiePayMonitor:
     def __init__(self):
         self.consecutive_errors = 0
         self.shutdown_event = asyncio.Event()

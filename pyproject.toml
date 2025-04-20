@@ -1,5 +1,5 @@
 [project]
-name = "piepaybot"
+name = "piepaymon"
 version = "0.1.0"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-piepaybot = "piepaybot:main"
+piepaymon = "piepaymon:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -1,8 +1,8 @@
 import logging
 from typing import TypedDict, cast
 
-from piepaybot.client import PiePayAPIClient
-from piepaybot.models import Offer
+from piepaymon.client import PiePayAPIClient
+from piepaymon.models import Offer
 
 logger = logging.getLogger(__name__)
 
