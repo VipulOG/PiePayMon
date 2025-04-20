@@ -94,7 +94,6 @@ class PiePayMonitor:
                             "Reached maximum consecutive errors "
                             + f"({MAX_CONSECUTIVE_ERRORS}). Exiting..."
                         )
-                        self.shutdown_event.set()
                         return
 
                     delay = random.uniform(MIN_DELAY, MAX_DELAY) + (
