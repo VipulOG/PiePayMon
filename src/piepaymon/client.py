@@ -35,8 +35,10 @@ class PiePayAPIClient:
         self.base_url = BASE_URL
         self.default_headers = HEADERS.copy()
         self.client = httpx.AsyncClient()
+        self._closed = False
 
     def set_auth_token(self, token: str) -> None:
+        self._ensure_open()
         logger.debug("Applying auth headers to client...")
         self.default_headers["Authorization"] = f"Bearer {token}"
         logger.debug("Auth headers applied.")
@@ -51,6 +53,7 @@ class PiePayAPIClient:
         json: object | None = None,
         headers: Mapping[str, str] | None = None,
     ) -> httpx.Response:
+        self._ensure_open()
         url = f"{self.base_url}/{endpoint}"
         logger.debug(f"Request: {endpoint}")
 
@@ -84,11 +87,14 @@ class PiePayAPIClient:
         return response
 
     async def close(self) -> None:
-        logger.debug("Closing client connection...")
-        await self.client.aclose()
-        logger.debug("Client connection closed.")
+        if not self._closed:
+            logger.debug("Closing client connection...")
+            await self.client.aclose()
+            self._closed = True
+            logger.debug("Client connection closed.")
 
     async def __aenter__(self) -> PiePayAPIClient:
+        self._ensure_open()
         return self
 
     async def __aexit__(
@@ -98,3 +104,7 @@ class PiePayAPIClient:
         exc_tb: TracebackType | None,
     ) -> None:
         await self.close()
+
+    def _ensure_open(self) -> None:
+        if self._closed:
+            raise RuntimeError("Cannot use PiePayAPIClient: client is already closed.")
