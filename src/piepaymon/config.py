@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     MAX_DELAY: int = 5
     MAX_PAYMENT: int = 100000
     PAY_EARN_RATIO: float = 0.1
-    MAX_CONSECUTIVE_ERRORS: int = 3
+    MAX_ERRORS: int = 3
     ERROR_DELAY_INCREMENT: int = 1
     NOTIF_ENABLE: bool = False
     NOTIF_BOT_TOKEN: str | None = None

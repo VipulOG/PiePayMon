@@ -75,11 +75,11 @@ class PiePayMonitor:
     async def _handle_error(self, error: Exception) -> bool:
         self.consecutive_errors += 1
 
-        error_count = f"{self.consecutive_errors}/{settings.MAX_CONSECUTIVE_ERRORS}"
+        error_count = f"{self.consecutive_errors}/{settings.MAX_ERRORS}"
         logger.error(f"Error fetching offers ({error_count}): {error!r}", exc_info=True)
 
-        max_errors = settings.MAX_CONSECUTIVE_ERRORS
-        if self.consecutive_errors >= settings.MAX_CONSECUTIVE_ERRORS:
+        max_errors = settings.MAX_ERRORS
+        if self.consecutive_errors >= settings.MAX_ERRORS:
             logger.error(f"Max errors reached ({max_errors}). Exiting...")
             return True
 
