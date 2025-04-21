@@ -6,6 +6,7 @@ from typing import final
 
 from piepaymon.client import PiePayAPIClient, SessionExpiredError
 from piepaymon.config import settings
+from piepaymon.notif import send as notif_send
 from piepaymon.offers import fetch_offers
 from piepaymon.session import SessionManager
 
@@ -34,6 +35,9 @@ class PiePayMonitor:
             access_token = session.get("accessToken")
             client.set_auth_token(access_token)
 
+            if settings.NOTIF_ENABLE:
+                _ = await notif_send("PiePayMon service started.")
+
             while not self.shutdown_event.is_set():
                 try:
                     await self._monitor_offers(client, session_key)
@@ -49,6 +53,9 @@ class PiePayMonitor:
                 except Exception as e:
                     if await self._handle_error(e):
                         break
+
+        if settings.NOTIF_ENABLE:
+            _ = await notif_send("PiePayMon service stoped.")
 
         logger.info("PiePayMon service stopped.")
 
@@ -70,7 +77,23 @@ class PiePayMonitor:
             max_pay=settings.MAX_PAYMENT,
             min_pay_earn_ratio=settings.PAY_EARN_RATIO,
         )
-        logger.info(f"Found {len(offers)} available offers.")
+
+        if not (num_offers := len(offers)) > 0:
+            logger.info("No interesting offers available.")
+            return
+
+        logger.info(f"{num_offers} interesting offer(s) available:")
+        for i, offer in enumerate(offers, 1):
+            logger.info(f"Offer {i}: Pay ${offer.pay:.2f} → Earn ${offer.earn:.2f}")
+
+        if settings.NOTIF_ENABLE:
+            header = f"{num_offers} interesting offer(s) found:"
+            offer_lines = [
+                f"• Pay ${offer.pay:.2f} → Earn ${offer.earn:.2f}" for offer in offers
+            ]
+
+            notification_message = "\n".join([header, *offer_lines])
+            _ = await notif_send(notification_message)
 
     async def _handle_error(self, error: Exception) -> bool:
         self.consecutive_errors += 1
