@@ -93,6 +93,10 @@ class PiePayAPIClient:
             self._closed = True
             logger.debug("Client connection closed.")
 
+    def _ensure_open(self) -> None:
+        if self._closed:
+            raise RuntimeError("Cannot use PiePayAPIClient: client is already closed.")
+
     async def __aenter__(self) -> PiePayAPIClient:
         self._ensure_open()
         return self
@@ -104,7 +108,3 @@ class PiePayAPIClient:
         exc_tb: TracebackType | None,
     ) -> None:
         await self.close()
-
-    def _ensure_open(self) -> None:
-        if self._closed:
-            raise RuntimeError("Cannot use PiePayAPIClient: client is already closed.")
