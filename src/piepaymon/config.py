@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     PAY_EARN_RATIO: float = 0.1  # Acceptable ratio between payment and cashback
     MAX_CONSECUTIVE_ERRORS: int = 3  # Maximum consecutive errors before exiting
     ERROR_DELAY_INCREMENT: int = 1  # Additional delay after each error in seconds
+    NOTIF_ENABLE: bool = False
+    NOTIF_BOT_TOKEN: str | None = None
+    NOTIF_CHAT_ID: str | None = None
 
 
 settings = Settings()
