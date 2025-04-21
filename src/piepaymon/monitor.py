@@ -41,8 +41,10 @@ class PiePayMonitor:
             while not self.shutdown_event.is_set():
                 try:
                     await self._monitor_offers(client, session_key)
+
                     self.consecutive_errors = 0
                     delay = random.uniform(settings.MIN_DELAY, settings.MAX_DELAY)
+
                     logger.info(f"Waiting {delay:.2f}s...")
                     await asyncio.sleep(delay)
 
@@ -70,6 +72,7 @@ class PiePayMonitor:
 
     async def _monitor_offers(self, client: PiePayAPIClient, session_key: str):
         logger.info("Fetching offers...")
+
         offers = await fetch_offers(
             client=client,
             session_key=session_key,
