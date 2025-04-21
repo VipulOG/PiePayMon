@@ -5,9 +5,7 @@ from colorlog import ColoredFormatter
 
 from piepaymon.config import settings
 
-CONSOLE_LOG_LEVEL = settings.LOG_LEVEL
 LOG_FILE_PATH = Path("logs/piepaymon.log")
-
 LOG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
@@ -25,7 +23,7 @@ def setup_logger():
     root_logger.addHandler(file_handler)
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(CONSOLE_LOG_LEVEL)
+    console_handler.setLevel(settings.LOG_LEVEL)
     console_handler.addFilter(lambda record: record.name.startswith("piepaymon"))
     fmt = "%(asctime)s - %(name)s - %(log_color)s%(levelname)s%(reset)s - %(message)s"
     console_handler.setFormatter(ColoredFormatter(fmt, datefmt="%H:%M:%S"))
