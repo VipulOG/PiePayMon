@@ -12,98 +12,91 @@ from piepaymon.session import SessionManager
 logger = logging.getLogger(__name__)
 
 
-MIN_CASHBACK = settings.MIN_CASHBACK
-MIN_DELAY = settings.MIN_DELAY
-MAX_DELAY = settings.MAX_DELAY
-MAX_PAYMENT = settings.MAX_PAYMENT
-PAY_EARN_RATIO = settings.PAY_EARN_RATIO
-MAX_CONSECUTIVE_ERRORS = settings.MAX_CONSECUTIVE_ERRORS
-ERROR_DELAY_INCREMENT = settings.ERROR_DELAY_INCREMENT
-
-
 @final
 class PiePayMonitor:
     def __init__(self):
         self.consecutive_errors = 0
         self.shutdown_event = asyncio.Event()
 
-    def handle_shutdown_signal(self):
-        logger.info("Shutdown signal received. Exiting gracefully...")
-        self.shutdown_event.set()
-
     async def run(self):
-        logger.info("PiePayMon is now running...")
-
-        loop = asyncio.get_running_loop()
-
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            loop.add_signal_handler(sig, self.handle_shutdown_signal)
+        logger.info("PiePayMon service is now running...")
+        self._setup_signal_handlers()
 
         async with PiePayAPIClient() as client:
             session_manager = SessionManager(client)
-            if not (session := await session_manager.load_session()):
-                session = await session_manager.create_session()
+            session = await self._load_or_create_session(session_manager)
 
             if not session:
                 logger.error("Failed to create a session. Exiting...")
-                return
+                return None
 
-            client.set_auth_token(session.get("accessToken"))
+            session_key = session.get("sessionKey")
+            access_token = session.get("accessToken")
+            client.set_auth_token(access_token)
 
             while not self.shutdown_event.is_set():
                 try:
-                    logger.info("Fetching offers...")
-
-                    offers = await fetch_offers(
-                        client=client,
-                        session_key=session.get("sessionKey"),
-                        min_earn=MIN_CASHBACK,
-                        max_pay=MAX_PAYMENT,
-                        min_pay_earn_ratio=PAY_EARN_RATIO,
-                    )
-
-                    logger.info(f"Found {len(offers)} available offers.")
-
+                    await self._monitor_offers(client, session_key)
                     self.consecutive_errors = 0
-                    delay = random.uniform(MIN_DELAY, MAX_DELAY)
-
-                    logger.info(f"Waiting {delay:.2f} seconds before next check...")
-
+                    delay = random.uniform(settings.MIN_DELAY, settings.MAX_DELAY)
+                    logger.info(f"Waiting {delay:.2f}s...")
                     await asyncio.sleep(delay)
 
                 except SessionExpiredError:
                     logger.error("Session expired.")
                     session = await session_manager.create_session()
-
                     if not session:
                         logger.error("Failed to create a session. Exiting...")
-                        return
-
+                        return None
                     client.set_auth_token(session.get("accessToken"))
-                    continue
 
                 except Exception as e:
-                    self.consecutive_errors += 1
-
-                    logger.error(
-                        "Error fetching offers "
-                        + f"({self.consecutive_errors}/{MAX_CONSECUTIVE_ERRORS}): {e!r}",
-                        exc_info=True,
-                    )
-
-                    if self.consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
-                        logger.error(
-                            "Reached maximum consecutive errors "
-                            + f"({MAX_CONSECUTIVE_ERRORS}). Exiting..."
-                        )
+                    if await self._handle_error(e):
                         return
 
-                    delay = random.uniform(MIN_DELAY, MAX_DELAY) + (
-                        ERROR_DELAY_INCREMENT * self.consecutive_errors
-                    )
+        logger.info("PiePayMon service stopped.")
 
-                    logger.info(f"Waiting {delay:.2f} seconds before next attempt...")
+    def _setup_signal_handlers(self):
+        loop = asyncio.get_running_loop()
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig, self._handle_shutdown_signal)
 
-                    await asyncio.sleep(delay)
+    def _handle_shutdown_signal(self):
+        logger.info("Shutdown signal received. Exiting gracefully...")
+        self.shutdown_event.set()
 
-        logger.info("Application shutdown complete.")
+    async def _load_or_create_session(self, session_manager: SessionManager):
+        session = await session_manager.load_session()
+        if not session:
+            session = await session_manager.create_session()
+        return session
+
+    async def _monitor_offers(self, client: PiePayAPIClient, session_key: str):
+        logger.info("Fetching offers...")
+        offers = await fetch_offers(
+            client=client,
+            session_key=session_key,
+            min_earn=settings.MIN_CASHBACK,
+            max_pay=settings.MAX_PAYMENT,
+            min_pay_earn_ratio=settings.PAY_EARN_RATIO,
+        )
+        logger.info(f"Found {len(offers)} available offers.")
+
+    async def _handle_error(self, error: Exception) -> bool:
+        self.consecutive_errors += 1
+
+        error_count = f"{self.consecutive_errors}/{settings.MAX_CONSECUTIVE_ERRORS}"
+        logger.error(f"Error fetching offers ({error_count}): {error!r}", exc_info=True)
+
+        max_errors = settings.MAX_CONSECUTIVE_ERRORS
+        if self.consecutive_errors >= settings.MAX_CONSECUTIVE_ERRORS:
+            logger.error(f"Max errors reached ({max_errors}). Exiting...")
+            return True
+
+        delay = random.uniform(settings.MIN_DELAY, settings.MAX_DELAY) + (
+            settings.ERROR_DELAY_INCREMENT * self.consecutive_errors
+        )
+
+        logger.info(f"Retrying in {delay:.2f}s...")
+        await asyncio.sleep(delay)
+        return False
