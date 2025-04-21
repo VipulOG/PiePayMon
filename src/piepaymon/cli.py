@@ -22,14 +22,14 @@ def cli():
 @cli.command()
 def run():
     """Run the monitor service"""
-    setup_logger()
+    setup_logger(mode="service")
     _safe_async_run(_run_monitor())
 
 
 @cli.command()
 def create_session():
     """Create a new session interactively"""
-    setup_logger()
+    setup_logger(mode="interactive")
     _safe_async_run(_create_session())
 
 
