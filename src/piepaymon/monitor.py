@@ -44,11 +44,11 @@ class PiePayMonitor:
 
                 except SessionExpiredError:
                     logger.error("Session expired. Exiting...")
-                    return
+                    break
 
                 except Exception as e:
                     if await self._handle_error(e):
-                        return
+                        break
 
         logger.info("PiePayMon service stopped.")
 
