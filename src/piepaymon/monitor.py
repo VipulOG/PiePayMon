@@ -24,10 +24,10 @@ class PiePayMonitor:
 
         async with PiePayAPIClient() as client:
             session_manager = SessionManager(client)
-            session = await self._load_or_create_session(session_manager)
+            session = await session_manager.load_session()
 
             if not session:
-                logger.error("Failed to create a session. Exiting...")
+                logger.error("Session not found. Create one manually. Exiting...")
                 return None
 
             session_key = session.get("sessionKey")
@@ -43,12 +43,8 @@ class PiePayMonitor:
                     await asyncio.sleep(delay)
 
                 except SessionExpiredError:
-                    logger.error("Session expired.")
-                    session = await session_manager.create_session()
-                    if not session:
-                        logger.error("Failed to create a session. Exiting...")
-                        return None
-                    client.set_auth_token(session.get("accessToken"))
+                    logger.error("Session expired. Exiting...")
+                    return
 
                 except Exception as e:
                     if await self._handle_error(e):
@@ -64,12 +60,6 @@ class PiePayMonitor:
     def _handle_shutdown_signal(self):
         logger.info("Shutdown signal received. Exiting gracefully...")
         self.shutdown_event.set()
-
-    async def _load_or_create_session(self, session_manager: SessionManager):
-        session = await session_manager.load_session()
-        if not session:
-            session = await session_manager.create_session()
-        return session
 
     async def _monitor_offers(self, client: PiePayAPIClient, session_key: str):
         logger.info("Fetching offers...")
