@@ -18,22 +18,15 @@ def setup_logger():
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)
 
-    file_log_formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-
     file_handler = logging.FileHandler(LOG_FILE_PATH)
     file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(file_log_formatter)
+    fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    file_handler.setFormatter(logging.Formatter(fmt))
     root_logger.addHandler(file_handler)
-
-    console_formatter = ColoredFormatter(
-        "%(asctime)s - %(name)s - %(log_color)s%(levelname)s%(reset)s - %(message)s",
-        datefmt="%H:%M:%S",
-    )
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(CONSOLE_LOG_LEVEL)
-    console_handler.setFormatter(console_formatter)
     console_handler.addFilter(lambda record: record.name.startswith("piepaymon"))
+    fmt = "%(asctime)s - %(name)s - %(log_color)s%(levelname)s%(reset)s - %(message)s"
+    console_handler.setFormatter(ColoredFormatter(fmt, datefmt="%H:%M:%S"))
     root_logger.addHandler(console_handler)
