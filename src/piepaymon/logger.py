@@ -42,4 +42,5 @@ def setup_logger():
     console_handler = logging.StreamHandler()
     console_handler.setLevel(CONSOLE_LOG_LEVEL)
     console_handler.setFormatter(console_formatter)
+    console_handler.addFilter(lambda record: record.name.startswith("piepaymon"))
     root_logger.addHandler(console_handler)
