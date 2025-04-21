@@ -3,6 +3,7 @@ import logging
 import os
 from typing import TypedDict, cast, final, override
 
+import httpx
 import questionary
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError, Validator
@@ -20,8 +21,13 @@ class SessionData(TypedDict):
     sessionKey: str
 
 
-class LoginResponseJson(TypedDict):
+class SendOtpResponseJson(TypedDict):
+    msg: str
+
+
+class VerifyOtpResponseJson(TypedDict):
     data: "LoginData"
+    msg: str
 
 
 class LoginData(TypedDict):
@@ -53,13 +59,15 @@ class SessionManager:
     async def create_session(self) -> SessionData | None:
         logger.debug("Creating session...")
 
-        phone = await self._input_phone()
-        if not await self._send_otp(phone):
-            return None
+        while True:
+            phone = await self._input_phone()
+            if await self._send_otp(phone):
+                break
 
-        otp = await self._input_otp()
-        if not (token := await self._verify_otp(phone, otp)):
-            return None
+        while True:
+            otp = await self._input_otp()
+            if token := await self._verify_otp(phone, otp):
+                break
 
         session_data: SessionData = {
             "accessToken": token,
@@ -93,35 +101,59 @@ class SessionManager:
 
     async def _send_otp(self, phone_number: int) -> bool:
         logger.debug("Sending otp...")
-        _ = await self.client.request(
-            "otps/login/send",
-            "POST",
-            json={"phoneNumber": phone_number},
-        )
-        logger.info("OTP sent successfully.")
-        return True
+
+        try:
+            response = await self.client.request(
+                "otps/login/send",
+                "POST",
+                json={"phoneNumber": phone_number},
+            )
+            response_json = cast(SendOtpResponseJson, response.json())
+            msg = response_json["msg"]
+            print(f"✔️ {msg}")
+            logger.info(f"Success: {msg}")
+            return True
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 400:
+                response_json = cast(SendOtpResponseJson, e.response.json())
+                msg = response_json["msg"]
+                print(f"❌ {msg}")
+                logger.info(f"Failed: {msg}")
+                return False
+            raise
 
     async def _verify_otp(self, phone_number: int, otp: int) -> str | None:
         logger.debug("Verifying otp...")
 
-        response = await self.client.request(
-            "users/login-with-mobile",
-            "POST",
-            json={"phoneNumber": phone_number, "otp": otp},
-        )
-
-        response_json = cast(LoginResponseJson, response.json())
-        login_data = response_json["data"]
-
-        if login_data["isNewUser"]:
-            logger.warning(
-                "Account not found. "
-                + "Please create an account using the PiePay mobile app first."
+        try:
+            response = await self.client.request(
+                "users/login-with-mobile",
+                "POST",
+                json={"phoneNumber": phone_number, "otp": otp},
             )
-            return None
+            response_json = cast(VerifyOtpResponseJson, response.json())
+            login_data = response_json["data"]
 
-        logger.info("Logged in successfully.")
-        return login_data["accessToken"]
+            if login_data["isNewUser"]:
+                msg = "⚠️ Account not found. Please create an account using the PiePay mobile app first."
+                print(msg)
+                logger.warning("Failed to verify otp: Account not found.")
+                return None
+
+            msg = response_json["msg"]
+            print(f"✔️ {msg}")
+            logger.info(f"Success: {msg}")
+            return login_data["accessToken"]
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 400:
+                response_json = cast(VerifyOtpResponseJson, e.response.json())
+                msg = response_json["msg"]
+                print(f"❌ {msg}")
+                logger.info(f"Failed: {msg}")
+                return None
+            raise
 
     async def _input_phone(self) -> int:
         return int(
