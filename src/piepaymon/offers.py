@@ -16,9 +16,9 @@ class OffersData(TypedDict):
 
 
 class Deal(TypedDict):
+    userOrderId: str
     amountToPay: int
     cardholderEarnings: int
-    userOrderId: str
 
 
 async def fetch_offers(
