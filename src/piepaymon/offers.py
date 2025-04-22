@@ -39,7 +39,11 @@ async def fetch_offers(
     deals = response_data["data"]["deals"]
 
     return [
-        Offer(pay=deal["amountToPay"], earn=deal["cardholderEarnings"])
+        Offer(
+            id=deal["userOrderId"],
+            pay=deal["amountToPay"],
+            earn=deal["cardholderEarnings"],
+        )
         for deal in deals
         if (deal["cardholderEarnings"] >= min_earn)
         and (deal["amountToPay"] <= max_pay)
