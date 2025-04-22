@@ -18,6 +18,7 @@ class PiePayMonitor:
     def __init__(self):
         self.consecutive_errors = 0
         self.shutdown_event = asyncio.Event()
+        self.notified_offer_ids: set[str] = set()
 
     async def run(self):
         logger.info("PiePayMon service is now running...")
@@ -81,18 +82,34 @@ class PiePayMonitor:
             min_pay_earn_ratio=settings.PAY_EARN_RATIO,
         )
 
-        if not (num_offers := len(offers)) > 0:
-            logger.info("No interesting offers available.")
+        # Filter out notified_offer_ids that are no longer present in the current offers.
+        # This cleans up the set and implicitly handles offers that might have expired
+        # or been removed.
+        self.notified_offer_ids = {
+            offer_id
+            for offer_id in self.notified_offer_ids
+            if offer_id in {offer.id for offer in offers}
+        }
+
+        # Filter out offers that were already notified about
+        new_offers = [
+            offer for offer in offers if offer.id not in self.notified_offer_ids
+        ]
+
+        if not new_offers:
+            logger.info("No new interesting offers available.")
             return
 
-        logger.info(f"{num_offers} interesting offer(s) available:")
-        for i, offer in enumerate(offers, 1):
+        logger.info(f"{len(new_offers)} new interesting offer(s) available:")
+        for i, offer in enumerate(new_offers, 1):
             logger.info(f"Offer {i}: Pay ${offer.pay:.2f} → Earn ${offer.earn:.2f}")
+            self.notified_offer_ids.add(offer.id)
 
         if settings.NOTIF_ENABLE:
-            header = f"{num_offers} interesting offer(s) found:"
+            header = f"{len(new_offers)} new interesting offer(s) found:"
             offer_lines = [
-                f"• Pay ${offer.pay:.2f} → Earn ${offer.earn:.2f}" for offer in offers
+                f"• Pay ${offer.pay:.2f} → Earn ${offer.earn:.2f}"
+                for offer in new_offers
             ]
 
             notification_message = "\n".join([header, *offer_lines])
