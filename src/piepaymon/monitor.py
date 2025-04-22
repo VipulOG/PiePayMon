@@ -102,13 +102,13 @@ class PiePayMonitor:
 
         logger.info(f"{len(new_offers)} new interesting offer(s) available:")
         for i, offer in enumerate(new_offers, 1):
-            logger.info(f"Offer {i}: Pay ${offer.pay:.2f} → Earn ${offer.earn:.2f}")
+            logger.info(f"Offer {i}: Pay ₹{offer.pay:.2f} → Earn ₹{offer.earn:.2f}")
             self.notified_offer_ids.add(offer.id)
 
         if settings.NOTIF_ENABLE:
             header = f"{len(new_offers)} new interesting offer(s) found:"
             offer_lines = [
-                f"• Pay ${offer.pay:.2f} → Earn ${offer.earn:.2f}"
+                f"• Pay ₹{offer.pay:.2f} → Earn ₹{offer.earn:.2f}"
                 for offer in new_offers
             ]
 
