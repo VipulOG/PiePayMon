@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     MIN_DELAY: int = 1
     MAX_DELAY: int = 5
     MAX_PAYMENT: int = 100000
-    PAY_EARN_RATIO: float = 0.1
+    EARN_PAY_RATIO: float = 0.1
     MAX_ERRORS: int = 3
     ERROR_DELAY_INCREMENT: int = 1
     NOTIF_ENABLE: bool = False

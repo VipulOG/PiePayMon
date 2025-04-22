@@ -79,7 +79,7 @@ class PiePayMonitor:
             session_key=session_key,
             min_earn=settings.MIN_CASHBACK,
             max_pay=settings.MAX_PAYMENT,
-            min_pay_earn_ratio=settings.PAY_EARN_RATIO,
+            min_earn_pay_ratio=settings.EARN_PAY_RATIO,
         )
 
         # Filter out notified_offer_ids that are no longer present in the current offers.

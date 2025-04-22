@@ -27,7 +27,7 @@ async def fetch_offers(
     *,
     min_earn: float = 0,
     max_pay: float = 100000000,
-    min_pay_earn_ratio: float = 0,
+    min_earn_pay_ratio: float = 0,
 ) -> list[Offer]:
     response = await client.request(
         "orders-available/cardholder",
@@ -47,5 +47,5 @@ async def fetch_offers(
         for deal in deals
         if (deal["cardholderEarnings"] >= min_earn)
         and (deal["amountToPay"] <= max_pay)
-        and ((deal["amountToPay"] / deal["cardholderEarnings"]) >= min_pay_earn_ratio)
+        and ((deal["cardholderEarnings"] / deal["amountToPay"]) >= min_earn_pay_ratio)
     ]
